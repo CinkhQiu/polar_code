@@ -1,0 +1,2 @@
+/usr/bin/ar qc libpolar_bp_decode_lib.a CMakeFiles/polar_bp_decode_lib.dir/src/main.cpp.o
+/usr/bin/ranlib libpolar_bp_decode_lib.a

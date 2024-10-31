@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",                 // 项目中的所有头文件
+                "/usr/include",                          // 系统头文件路径
+                "/usr/local/include",                    // 本地安装的库的头文件路径
+                "/usr/lib/jvm/java-8-openjdk-amd64/include",  // JDK 头文件路径（如果需要）
+                "/usr/lib/jvm/java-8-openjdk-amd64/include/linux",  // 平台相关头文件路径（如果需要）
+                "/usr/src/googletest/googletest/include"  // Google Test 头文件路径
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/g++",               // 使用 g++ 编译器路径
+            "cStandard": "c17",                           // C标准
+            "cppStandard": "c++17",                       // C++标准
+            "intelliSenseMode": "linux-gcc-x64"           // IntelliSense 模式
+        }
+    ],
+    "version": 4
+}
