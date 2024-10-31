@@ -4,17 +4,13 @@
 PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 echo "项目根目录为: $PROJECT_ROOT"
 
-# 创建并进入 build 目录
-if [ ! -d "$PROJECT_ROOT/build" ]; then
-  echo "创建 build 目录..."
-  mkdir "$PROJECT_ROOT/build"
-else
-  echo "build 目录已存在"
+# 如果 build 目录已存在，清理并重新创建
+if [ -d "$PROJECT_ROOT/build" ]; then
+  echo "清理 build 目录..."
+  rm -rf "$PROJECT_ROOT/build"
 fi
-
-# 清理 build 目录
-echo "清理 build 目录..."
-rm -rf "$PROJECT_ROOT/build/*"
+echo "创建 build 目录..."
+mkdir "$PROJECT_ROOT/build"
 
 # 进入 build 目录
 cd "$PROJECT_ROOT/build"

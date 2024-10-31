@@ -1,22 +1,19 @@
 #include "bp_unit_cacl.h"
+#include "simulate.h"
 #include <Eigen/Dense>
 #include <iostream>
 
 int main() {
-    // 示例：创建并初始化一个 3x3 的 Eigen 矩阵
-    Eigen::Matrix3d matrix;
-    matrix << 1, 2, 3,
-              4, 5, 6,
-              7, 8, 9;
+    int N = 16; // 假设长度为 8 的码字
+    Eigen::VectorXi codeword(N);
+    codeword << 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1;
 
-    // 计算矩阵的转置并输出结果
-    Eigen::Matrix3d transpose = matrix.transpose();
-    std::cout << "Matrix:" << std::endl << matrix << std::endl;
-    std::cout << "Transpose:" << std::endl << transpose << std::endl;
+    polar_encode(codeword);
+    std::cout << "编码后的码字:\n" << codeword << std::endl;
+    polar_decode(codeword);
+    std::cout << "解码后的码字:\n" << codeword << std::endl;
 
-    // 主程序其他逻辑
-    // 比如调用项目中的函数
-    // double result = some_project_function(matrix);
+    Eigen::VectorXd double_codeword = codeword.cast<double>();
 
     return 0;
 }

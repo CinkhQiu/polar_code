@@ -1,4 +1,4 @@
-# Install script for directory: /home/qkh0701wsl/code/cpp/polar_code
+# Install script for directory: /home/qkhmy0701/Code/cpp/polar_code
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/qkh0701wsl/code/cpp/polar_code/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/qkhmy0701/Code/cpp/polar_code/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
