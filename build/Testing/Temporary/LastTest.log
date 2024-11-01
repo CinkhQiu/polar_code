@@ -1,10 +1,10 @@
-Start testing: Nov 01 00:25 CST
+Start testing: Nov 01 16:58 CST
 ----------------------------------------------------------
 1/2 Testing: bp_unit_cacl_tests
 1/2 Test: bp_unit_cacl_tests
-Command: "/home/qkhmy0701/Code/cpp/polar_code/tests/unit/bin/bp_unit_cacl_tests"
-Directory: /home/qkhmy0701/Code/cpp/polar_code/build
-"bp_unit_cacl_tests" start time: Nov 01 00:25 CST
+Command: "/home/qkh0701wsl/code/cpp/polar_code/tests/unit/bin/bp_unit_cacl_tests"
+Directory: /home/qkh0701wsl/code/cpp/polar_code/build
+"bp_unit_cacl_tests" start time: Nov 01 16:58 CST
 Output:
 ----------------------------------------------------------
 [==========] Running 4 tests from 1 test suite.
@@ -12,22 +12,18 @@ Output:
 [----------] 4 tests from BpUnitCaclTest
 [ RUN      ] BpUnitCaclTest.LeftUpLeftInfoCacl
 [TestBody] result: 1.875
-calc
 [TestBody] f_func_result: 1.875
 [       OK ] BpUnitCaclTest.LeftUpLeftInfoCacl (0 ms)
 [ RUN      ] BpUnitCaclTest.LeftDownLeftInfoCacl
 [TestBody] result: -6.5
-calc
 [TestBody] f_func_result: -6.5
 [       OK ] BpUnitCaclTest.LeftDownLeftInfoCacl (0 ms)
 [ RUN      ] BpUnitCaclTest.RightUpRightInfoCacl
 [TestBody] result: 0.8789
-calc
 [TestBody] f_func_result: 0.878906
 [       OK ] BpUnitCaclTest.RightUpRightInfoCacl (0 ms)
 [ RUN      ] BpUnitCaclTest.RightDownRightInfoCacl
 [TestBody] result: -3.51562
-calc
 [TestBody] f_func_result: -3.51562
 [       OK ] BpUnitCaclTest.RightDownRightInfoCacl (0 ms)
 [----------] 4 tests from BpUnitCaclTest (0 ms total)
@@ -39,15 +35,15 @@ calc
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"bp_unit_cacl_tests" end time: Nov 01 00:25 CST
+"bp_unit_cacl_tests" end time: Nov 01 16:58 CST
 "bp_unit_cacl_tests" time elapsed: 00:00:00
 ----------------------------------------------------------
 
 2/2 Testing: simulate_tests
 2/2 Test: simulate_tests
-Command: "/home/qkhmy0701/Code/cpp/polar_code/tests/unit/bin/simulate_tests"
-Directory: /home/qkhmy0701/Code/cpp/polar_code/build
-"simulate_tests" start time: Nov 01 00:25 CST
+Command: "/home/qkh0701wsl/code/cpp/polar_code/tests/unit/bin/simulate_tests"
+Directory: /home/qkh0701wsl/code/cpp/polar_code/build
+"simulate_tests" start time: Nov 01 16:58 CST
 Output:
 ----------------------------------------------------------
 [==========] Running 0 tests from 0 test suites.
@@ -57,8 +53,8 @@ Output:
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"simulate_tests" end time: Nov 01 00:25 CST
+"simulate_tests" end time: Nov 01 16:58 CST
 "simulate_tests" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-End testing: Nov 01 00:25 CST
+End testing: Nov 01 16:58 CST

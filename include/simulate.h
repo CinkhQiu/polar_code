@@ -1,6 +1,7 @@
 #pragma once
 #include <Eigen/Dense>
 #include <random>
+#include "bp_unit_cacl.h"
 
 // 生成随机码字
 void generate_codeword(Eigen::VectorXi &codeword,
@@ -43,8 +44,8 @@ void polar_encode(Eigen::VectorXi &codeword) {
 
     // 遍历每一层的操作
     for (int layer = 1; layer <= max_layer; ++layer) {
-        int step = 1 << layer;           // 本层的跨度
-        int half_step = step >> 1;       // 每组操作的步长
+        int step = 1 << layer;     // 本层的跨度
+        int half_step = step >> 1; // 每组操作的步长
 
         // 遍历该层中的每一组
         for (int start = 0; start < N; start += step) {
@@ -62,8 +63,8 @@ void polar_decode(Eigen::VectorXi &codeword) {
 
     // 逆序遍历每一层，从 max_layer 开始递减
     for (int layer = max_layer; layer >= 1; --layer) {
-        int step = 1 << layer;           // 本层的跨度
-        int half_step = step >> 1;       // 每组操作的步长
+        int step = 1 << layer;     // 本层的跨度
+        int half_step = step >> 1; // 每组操作的步长
 
         // 遍历该层中的每一组
         for (int start = 0; start < N; start += step) {
@@ -75,6 +76,34 @@ void polar_decode(Eigen::VectorXi &codeword) {
 }
 
 // bpsk调制，添加awgn噪声
-void add_awgn_noise(Eigen::VectorXd &encode_code, double snr_db) {
+void add_awgn_noise(Eigen::VectorXd &encode_code, double sigma) {
+    // 设置随机数生成器，生成符合高斯分布的噪声
+    std::default_random_engine generator;
+    std::normal_distribution<double> distribution(0.0, sigma);
 
+    // 执行 BPSK 调制并添加噪声
+    for (int i = 0; i < encode_code.size(); ++i) {
+        // BPSK 调制：0 映射为 +1，1 映射为 -1
+        encode_code(i) = (encode_code(i) == 0) ? 1.0 : -1.0;
+
+        // 添加 AWGN 噪声
+        encode_code(i) += distribution(generator);
+    }
+}
+
+// 初始化左右信息矩阵
+void init_left_right_info(Eigen::MatrixXd &left_info,
+                          Eigen::MatrixXd &right_info,
+                          Eigen::VectorXd &received_codeword,
+                          Eigen::VectorXi &frozen_bits) {
+    // 初始化右信息矩阵的第 0 列
+    for (int i = 0; i < frozen_bits.size(); ++i) {
+        right_info(i, 0) = (frozen_bits(i) == 1) ? MAX_INF : 0.0;
+    }
+
+    // 初始化左信息矩阵的最后一列
+    int last_col = left_info.cols() - 1;
+    for (int i = 0; i < received_codeword.size(); ++i) {
+        left_info(i, last_col) = received_codeword(i);
+    }
 }

@@ -18,7 +18,6 @@ inline double min_abs(double x, double y) {
 
 // f函数计算公式
 inline double f_func(double x, double y) {
-    std::cerr << "calc" << std::endl;
     return ALPHA * sign(x) * sign(y) * min_abs(x, y);
 }
 
