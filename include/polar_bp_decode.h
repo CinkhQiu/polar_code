@@ -70,3 +70,16 @@ void right_cacl(Eigen::MatrixXd &left_info, Eigen::MatrixXd &right_info,
         }
     }
 }
+
+void get_decode_codeword(Eigen::MatrixXd &left_info, Eigen::MatrixXd &right_info,
+            Eigen::VectorXi &decode_codeword) {
+    int N = left_info.rows(); // 获取行数，即码字长度
+
+    for (int i = 0; i < N; ++i) {
+        // 对 left_info 和 right_info 的第 0 列进行相加
+        double sum = left_info(i, 0) + right_info(i, 0);
+
+        // 根据译码规则更新 decode_codeword
+        decode_codeword(i) = (sum > 0) ? 0 : 1;
+    }
+}
