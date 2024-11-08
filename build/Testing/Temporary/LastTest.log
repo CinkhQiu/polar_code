@@ -1,10 +1,10 @@
-Start testing: Nov 06 23:37 CST
+Start testing: Nov 08 12:11 CST
 ----------------------------------------------------------
 1/2 Testing: bp_unit_cacl_tests
 1/2 Test: bp_unit_cacl_tests
-Command: "/home/qkhmy0701/Code/cpp/polar_code/tests/unit/bin/bp_unit_cacl_tests"
-Directory: /home/qkhmy0701/Code/cpp/polar_code/build
-"bp_unit_cacl_tests" start time: Nov 06 23:37 CST
+Command: "/home/qkh0701wsl/code/cpp/polar_code/tests/unit/bin/bp_unit_cacl_tests"
+Directory: /home/qkh0701wsl/code/cpp/polar_code/build
+"bp_unit_cacl_tests" start time: Nov 08 12:11 CST
 Output:
 ----------------------------------------------------------
 [==========] Running 4 tests from 1 test suite.
@@ -35,15 +35,15 @@ Output:
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"bp_unit_cacl_tests" end time: Nov 06 23:37 CST
+"bp_unit_cacl_tests" end time: Nov 08 12:11 CST
 "bp_unit_cacl_tests" time elapsed: 00:00:00
 ----------------------------------------------------------
 
 2/2 Testing: simulate_tests
 2/2 Test: simulate_tests
-Command: "/home/qkhmy0701/Code/cpp/polar_code/tests/unit/bin/simulate_tests"
-Directory: /home/qkhmy0701/Code/cpp/polar_code/build
-"simulate_tests" start time: Nov 06 23:37 CST
+Command: "/home/qkh0701wsl/code/cpp/polar_code/tests/unit/bin/simulate_tests"
+Directory: /home/qkh0701wsl/code/cpp/polar_code/build
+"simulate_tests" start time: Nov 08 12:11 CST
 Output:
 ----------------------------------------------------------
 [==========] Running 0 tests from 0 test suites.
@@ -53,8 +53,8 @@ Output:
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"simulate_tests" end time: Nov 06 23:37 CST
+"simulate_tests" end time: Nov 08 12:11 CST
 "simulate_tests" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-End testing: Nov 06 23:37 CST
+End testing: Nov 08 12:11 CST

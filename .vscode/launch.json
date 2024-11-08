@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch-gas-dynamic",
+            "name": "(gdb) Launch-polar-bp-decode",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/polar_bp_decode",

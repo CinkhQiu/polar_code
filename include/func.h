@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <ctime>
 
 void error_data_stastics(Eigen::VectorXi &init_codeword,
                          Eigen::VectorXi &decode_codeword, int &error_bits,
@@ -17,4 +18,19 @@ void error_data_stastics(Eigen::VectorXi &init_codeword,
     if (frame_has_error) {
         ++error_frames;
     }
+}
+
+bool check_encode_success(Eigen::VectorXi &init_codeword,
+                          Eigen::VectorXi &decode_codeword) {
+    return init_codeword == decode_codeword;
+}
+
+std::string get_current_date() {
+    std::time_t now = std::time(nullptr); // 获取当前时间
+    char buffer[11]; // "YYYY-MM-DD" 格式，需要 10 个字符 + '\0'
+
+    // 使用 C 标准库的 strftime 进行格式化
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d", std::localtime(&now));
+
+    return std::string(buffer);
 }
