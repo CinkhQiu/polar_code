@@ -19,7 +19,7 @@ constexpr double END_SNR = 5.0;
 constexpr double STEP = 0.5;
 const int TOTAL_STEP_NUMS =
     static_cast<int>(std::round((END_SNR - START_SNR) / STEP) + 1);
-constexpr int MAX_FRAME = static_cast<int>(1e6);
+constexpr int MAX_FRAME = static_cast<int>(1e5);
 constexpr int MAX_ERROR_FRAME = 100;
 const int LAYER = static_cast<int>(std::log2(N)) + 1;
 const int LOG_N = LAYER - 1;
@@ -42,6 +42,35 @@ struct output_info {
     double sim_minutes = 0.0;
     double sim_seconds = 0.0;
 };
+
+// 全局随机数生成器
+std::mt19937
+    generator(std::chrono::steady_clock::now().time_since_epoch().count());
+std::uniform_int_distribution<int> dist(0, 1);
+
+// 生成随机码字
+void generate_codeword(Eigen::VectorXi &codeword,
+                       Eigen::VectorXi &frozen_bits) {
+    for (int i = 0; i < frozen_bits.size(); ++i) {
+        if (frozen_bits[i] == 0) {         // 如果当前位置为信息位
+            codeword[i] = dist(generator); // 随机生成 0 或 1
+        }
+    }
+}
+
+// BPSK 调制并添加 AWGN 噪声
+void add_awgn_noise(Eigen::VectorXd &encode_code, double sigma) {
+    // 每次调用时创建新的高斯分布对象，使用当前的 sigma 值
+    std::normal_distribution<double> distribution(0.0, sigma);
+
+    for (int i = 0; i < encode_code.size(); ++i) {
+        // BPSK 调制：0 映射为 +1，1 映射为 -1
+        encode_code(i) = (encode_code(i) == 0) ? 1.0 : -1.0;
+
+        // 添加 AWGN 噪声
+        encode_code(i) += distribution(generator);
+    }
+}
 
 double get_snr_to_sigma(double SNR, double rate) {
     // 计算方差
@@ -81,7 +110,8 @@ int main() {
         // 朝输出文件中添加日期
         output_file << get_current_date() << "\n";
         output_file << "---------------------"
-                    << "多线程版本：当前仿真码长为：" << N << "---------------------"
+                    << "多线程版本：当前仿真码长为：" << N
+                    << "---------------------"
                     << "\n";
     } else {
         std::cerr << "打开输出文件失败" << std::endl;
@@ -93,7 +123,8 @@ int main() {
     // 创建多线程
     for (size_t i = 0; i < TOTAL_STEP_NUMS; i++) {
         all_output_info[i].curr_snr = START_SNR + STEP * i;
-        threads.emplace_back(run, std::ref(frozen_bits), snr_to_sigma[i], std::ref(all_output_info[i]));
+        threads.emplace_back(run, std::ref(frozen_bits), snr_to_sigma[i],
+                             std::ref(all_output_info[i]));
     }
 
     // 等待所有线程完成
@@ -136,9 +167,11 @@ int main() {
         // 当前仿真允许最大错误帧数
         output_file << "当前仿真允许最大错误帧数：" << MAX_ERROR_FRAME << "\n";
         // 记录总的仿真次数
-        output_file << "当前仿真次数为：" << all_output_info[i].total_frames << "\n";
+        output_file << "当前仿真次数为：" << all_output_info[i].total_frames
+                    << "\n";
         // 记录当前错误帧数
-        output_file << "当前错误帧数为：" << all_output_info[i].error_frames << "\n";
+        output_file << "当前错误帧数为：" << all_output_info[i].error_frames
+                    << "\n";
         // 记录总的误帧率
         output_file << "当前误帧率为" << std::fixed << std::setprecision(8)
                     << all_output_info[i].error_frames_rate << "\n";
@@ -146,9 +179,11 @@ int main() {
         output_file << "当前误比特率为" << std::fixed << std::setprecision(8)
                     << all_output_info[i].error_bits_rate << "\n";
         // 记录总的迭代次数
-        output_file << "BP译码总迭代次数为：" << all_output_info[i].total_iter << "\n";
-
+        output_file << "BP译码总迭代次数为：" << all_output_info[i].total_iter
+                    << "\n";
     }
+
+    output_file << "----------------------------------------------------------------------" << "\n";
 
     output_file.close(); // 关闭文件
 
