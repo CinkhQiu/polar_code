@@ -27,10 +27,12 @@ bool check_encode_success(Eigen::VectorXi &init_codeword,
 
 std::string get_current_date() {
     std::time_t now = std::time(nullptr); // 获取当前时间
-    char buffer[11]; // "YYYY-MM-DD" 格式，需要 10 个字符 + '\0'
+    std::tm tm_struct;
+    // localtime_s(&tm_struct, &now); // 使用线程安全的 localtime_s
+    localtime_r(&now, &tm_struct); // 使用线程安全的 localtime_r
 
-    // 使用 C 标准库的 strftime 进行格式化
-    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d", std::localtime(&now));
+    char buffer[20]; // "YYYY-MM-DD HH:MM:SS" 格式，需要 19 个字符 + '\0'
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &tm_struct);
 
     return std::string(buffer);
 }

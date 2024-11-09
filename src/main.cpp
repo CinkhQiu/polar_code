@@ -5,6 +5,7 @@
 #include "simulate.h"
 #include <Eigen/Dense>
 #include <chrono>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -12,24 +13,30 @@
 #include <thread>
 #include <vector>
 
-constexpr int N = 128; // 码长
+constexpr int N = 64; // 码长
 constexpr double RATE = 0.5;
 constexpr double START_SNR = 1.0;
 constexpr double END_SNR = 5.0;
 constexpr double STEP = 0.5;
 const int TOTAL_STEP_NUMS =
     static_cast<int>(std::round((END_SNR - START_SNR) / STEP) + 1);
-constexpr int MAX_FRAME = static_cast<int>(1e5);
+constexpr int MAX_FRAME = static_cast<int>(1e6);
 constexpr int MAX_ERROR_FRAME = 100;
 const int LAYER = static_cast<int>(std::log2(N)) + 1;
 const int LOG_N = LAYER - 1;
 constexpr int MAX_ITER = 10;
-const std::string file_name = "resources/frozen_bits_file/2^" +
-                              std::to_string(LOG_N) + "_by2_5_dB_GA.txt";
+
+namespace fs = std::filesystem;
+const std::string file_name =
+    (fs::path("resources") / "frozen_bits_file" /
+     ("2^" + std::to_string(LOG_N) + "_by2_5_dB_GA.txt"))
+        .string();
 
 // 创建文件名
-std::string output_file_name = "./resources/output_file/_output_2^" +
-                               std::to_string(LOG_N) + "_by2_5_dB_GA.txt";
+std::string output_file_name =
+    (fs::path("resources") / "output_file" /
+     ("_output_2^" + std::to_string(LOG_N) + "_by2_5_dB_GA.txt"))
+        .string();
 
 struct output_info {
     double curr_snr;
@@ -73,8 +80,12 @@ void add_awgn_noise(Eigen::VectorXd &encode_code, double sigma) {
 }
 
 double get_snr_to_sigma(double SNR, double rate) {
+    // 将 SNR 从 dB 转换为线性值
+    double snr_linear = std::pow(10.0, SNR / 10.0);
+
     // 计算方差
-    double variance = 1.0 / (2.0 * rate * SNR);
+    double variance = 1.0 / (2.0 * rate * snr_linear);
+
     // 计算标准差 sigma
     double sigma = std::sqrt(variance);
     return sigma;
@@ -183,7 +194,9 @@ int main() {
                     << "\n";
     }
 
-    output_file << "----------------------------------------------------------------------" << "\n";
+    output_file << "-----------------------------------------------------------"
+                   "-----------"
+                << "\n";
 
     output_file.close(); // 关闭文件
 
@@ -272,4 +285,6 @@ void run(Eigen::VectorXi &frozen_bits, double snr,
     // 记录总的误比特率
     thread_output_info.error_bits_rate = (thread_output_info.error_bits * 1.0) /
                                          (thread_output_info.total_frames * N);
+
+    std::cout << "信噪比 " << snr << " 仿真结束" << std::endl;
 }
