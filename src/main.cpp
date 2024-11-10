@@ -13,7 +13,7 @@
 #include <thread>
 #include <vector>
 
-constexpr int N = 512; // 码长
+constexpr int N = 4; // 码长
 constexpr double RATE = 0.5;
 constexpr double START_SNR = 1.0;
 constexpr double END_SNR = 5.0;
@@ -119,7 +119,10 @@ int main() {
     std::ofstream output_file(output_file_name, std::ios::app);
     if (output_file.is_open()) {
         // 朝输出文件中添加日期
-        output_file << get_current_date() << "\n";
+        output_file << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+                       "+++++++++++"
+                    << "\n";
+        output_file << "++++++++++++++++++++++" << get_current_date() << "\n";
         output_file << "---------------------"
                     << "多线程版本：当前仿真码长为：" << N
                     << "---------------------"
