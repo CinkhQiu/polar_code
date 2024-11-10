@@ -13,7 +13,7 @@
 #include <thread>
 #include <vector>
 
-constexpr int N = 64; // 码长
+constexpr int N = 512; // 码长
 constexpr double RATE = 0.5;
 constexpr double START_SNR = 1.0;
 constexpr double END_SNR = 5.0;
