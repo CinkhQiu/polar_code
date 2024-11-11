@@ -27,17 +27,12 @@
                     "ignoreFailures": true
                 },
                 {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "python import sys;sys.path.insert(0, '/usr/share/gcc/python/libstdcxx/v6');from printers import register_libstdcxx_printers;register_libstdcxx_printers(None)",
-                    "ignoreFailures": false
-                },
-                {
                     "description": "Set Disassembly Flavor to Intel",
                     "text": "-gdb-set disassembly-flavor intel",
                     "ignoreFailures": true
                 },
                 {
-                    "description": "Enable pretty printing",
+                    "description": "Enable Eigen Pretty Printers",
                     "text": "python import sys; sys.path.insert(0, '/home/qkh0701wsl/code/cpp/EigenGdb'); from printers import register_eigen_printers; register_eigen_printers(None)",
                     "ignoreFailures": true
                 }

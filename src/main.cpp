@@ -39,6 +39,12 @@ std::string output_file_name =
      ("_output_2^" + std::to_string(LOG_N) + "_by2_5_dB_GA.txt"))
         .string();
 
+// 创建基于cs翻转集合的bp-flip译码算法仿真结果保存文件名
+std::string output_file_bp_flip_cs_name =
+    (fs::path("resources") / "output_file" /
+     ("_output_bp_flip_cs_2^" + std::to_string(LOG_N) + "_by2_5_dB_GA.txt"))
+        .string();
+
 struct output_info {
     double curr_snr;
     int error_bits = 0;
@@ -102,6 +108,9 @@ void threads_run();
 
 // 关键集生成运行测试
 void critical_sets_run();
+
+// 基于关键集的比特翻转译码算法性能仿真测试
+void bit_flip_simu_test();
 
 int main() {
     Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(N);
@@ -315,4 +324,9 @@ void critical_sets_run() {
     read_frozen_bits(frozen_bits, file_name);
 
     generate_critical_sets(frozen_bits);
+}
+
+// 基于关键集的比特翻转译码算法性能仿真测试
+void bit_flip_simu_test() {
+
 }
