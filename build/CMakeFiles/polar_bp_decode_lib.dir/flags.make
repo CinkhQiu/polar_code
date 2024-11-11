@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/qkhmy0701/Code/cpp/polar_code/include
+CXX_INCLUDES = -I/home/qkh0701wsl/code/cpp/polar_code/include
 
 CXX_FLAGS = -g -std=gnu++17
 

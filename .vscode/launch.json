@@ -35,6 +35,11 @@
                     "description": "Set Disassembly Flavor to Intel",
                     "text": "-gdb-set disassembly-flavor intel",
                     "ignoreFailures": true
+                },
+                {
+                    "description": "Enable pretty printing",
+                    "text": "python import sys; sys.path.insert(0, '/home/qkh0701wsl/code/cpp/EigenGdb'); from printers import register_eigen_printers; register_eigen_printers(None)",
+                    "ignoreFailures": true
                 }
             ],
             "preLaunchTask": "Run build.sh"

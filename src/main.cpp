@@ -1,3 +1,4 @@
+#include "bp_flip_func.h"
 #include "bp_unit_cacl.h"
 #include "file_in_out.h"
 #include "func.h"
@@ -13,7 +14,7 @@
 #include <thread>
 #include <vector>
 
-constexpr int N = 4; // 码长
+constexpr int N = 32; // 码长
 constexpr double RATE = 0.5;
 constexpr double START_SNR = 1.0;
 constexpr double END_SNR = 5.0;
@@ -96,7 +97,110 @@ double get_snr_to_sigma(double SNR, double rate) {
 void run(Eigen::VectorXi &frozen_bits, double snr,
          output_info &thread_output_info);
 
+// 多线程信噪比仿真测试
+void threads_run();
+
+// 关键集生成运行测试
+void critical_sets_run();
+
 int main() {
+    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(N);
+    read_frozen_bits(frozen_bits, file_name);
+
+    critical_sets_run();
+    // threads_run();
+    return 0;
+}
+
+// 完成一次信噪比下的仿真
+// 输入参数：冻结位向量，信噪比，output_info
+void run(Eigen::VectorXi &frozen_bits, double snr,
+         output_info &thread_output_info) {
+    // 程序开始计时
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    while (thread_output_info.total_frames < MAX_FRAME &&
+           thread_output_info.error_frames < MAX_ERROR_FRAME) {
+        // 单次码字仿真
+
+        // 生成随机码字
+        Eigen::VectorXi init_codeword = Eigen::VectorXi::Zero(N);
+        generate_codeword(init_codeword, frozen_bits);
+        // 存留生成后的随机码字
+        Eigen::VectorXi int_encode_codeword = init_codeword;
+        // 编码
+        polar_encode(int_encode_codeword);
+        // 码字向量转换为double元素类型
+        Eigen::VectorXd encode_codeword = int_encode_codeword.cast<double>();
+
+        // 添加噪声
+        add_awgn_noise(encode_codeword, snr);
+        // 接受向量别名，方便阅读
+        auto &received_codeword = encode_codeword;
+
+        // 译码
+        // 声明左右矩阵
+        Eigen::MatrixXd left_info(N, LAYER);
+        Eigen::MatrixXd right_info(N, LAYER);
+        // 初始化左右矩阵
+        init_left_right_info(left_info, right_info, received_codeword,
+                             frozen_bits);
+        // 码字判决后的码字
+        Eigen::VectorXi decode_codeword = Eigen::VectorXi::Zero(N);
+        // 记录当前译码成功标志
+        bool success_decode = false;
+        // 左右信息迭代计算
+        for (size_t iter = 0; iter < MAX_ITER; iter++) {
+            success_decode = false;
+            // 向左计算
+            left_cacl(left_info, right_info, N);
+            // 向右计算
+            right_cacl(left_info, right_info, N);
+
+            // 码字判决
+            get_decode_codeword(left_info, right_info, decode_codeword);
+            // 检验是否译码成功
+            if (check_encode_success(init_codeword, decode_codeword)) {
+                // 译码成功，无需进行后续迭代
+                success_decode = true;
+                thread_output_info.total_iter += iter;
+                break;
+            }
+        }
+        // 结束该次译码，进行数据统计
+        thread_output_info.total_frames++;
+        if (!success_decode) {
+            // 译码失败，进行错误译码信息统计
+            error_data_stastics(init_codeword, decode_codeword,
+                                thread_output_info.error_bits,
+                                thread_output_info.error_frames);
+        }
+    }
+
+    // 获取结束时间点
+    auto end_time = std::chrono::high_resolution_clock::now();
+    // 计算时间差，单位为秒
+    std::chrono::duration<double> elapsed_seconds = end_time - start_time;
+
+    // 将时间转换为分钟和秒
+    thread_output_info.sim_minutes =
+        static_cast<int>(elapsed_seconds.count()) / 60;
+    thread_output_info.sim_seconds =
+        elapsed_seconds.count() - (thread_output_info.sim_minutes * 60);
+
+    // 记录总的误帧率
+    thread_output_info.error_frames_rate =
+        (thread_output_info.error_frames * 1.0) /
+        thread_output_info.total_frames;
+
+    // 记录总的误比特率
+    thread_output_info.error_bits_rate = (thread_output_info.error_bits * 1.0) /
+                                         (thread_output_info.total_frames * N);
+
+    std::cout << "信噪比 " << snr << " 仿真结束" << std::endl;
+}
+
+void threads_run() {
     // 读取冻结位信息
     Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(N);
     read_frozen_bits(frozen_bits, file_name);
@@ -202,92 +306,13 @@ int main() {
                 << "\n";
 
     output_file.close(); // 关闭文件
-
-    return 0;
 }
 
-void run(Eigen::VectorXi &frozen_bits, double snr,
-         output_info &thread_output_info) {
-    // 程序开始计时
-    auto start_time = std::chrono::high_resolution_clock::now();
+// 关键集生成运行测试
+void critical_sets_run() {
+    // 读取冻结位信息
+    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(N);
+    read_frozen_bits(frozen_bits, file_name);
 
-    while (thread_output_info.total_frames < MAX_FRAME &&
-           thread_output_info.error_frames < MAX_ERROR_FRAME) {
-        // 单次码字仿真
-
-        // 生成随机码字
-        Eigen::VectorXi init_codeword = Eigen::VectorXi::Zero(N);
-        generate_codeword(init_codeword, frozen_bits);
-        // 存留生成后的随机码字
-        Eigen::VectorXi int_encode_codeword = init_codeword;
-        // 编码
-        polar_encode(int_encode_codeword);
-        // 码字向量转换为double元素类型
-        Eigen::VectorXd encode_codeword = int_encode_codeword.cast<double>();
-
-        // 添加噪声
-        add_awgn_noise(encode_codeword, snr);
-        // 接受向量别名，方便阅读
-        auto &received_codeword = encode_codeword;
-
-        // 译码
-        // 声明左右矩阵
-        Eigen::MatrixXd left_info(N, LAYER);
-        Eigen::MatrixXd right_info(N, LAYER);
-        // 初始化左右矩阵
-        init_left_right_info(left_info, right_info, received_codeword,
-                             frozen_bits);
-        // 码字判决后的码字
-        Eigen::VectorXi decode_codeword = Eigen::VectorXi::Zero(N);
-        // 记录当前译码成功标志
-        bool success_decode = false;
-        // 左右信息迭代计算
-        for (size_t iter = 0; iter < MAX_ITER; iter++) {
-            success_decode = false;
-            // 向左计算
-            left_cacl(left_info, right_info, N);
-            // 向右计算
-            right_cacl(left_info, right_info, N);
-
-            // 码字判决
-            get_decode_codeword(left_info, right_info, decode_codeword);
-            // 检验是否译码成功
-            if (check_encode_success(init_codeword, decode_codeword)) {
-                // 译码成功，无需进行后续迭代
-                success_decode = true;
-                thread_output_info.total_iter += iter;
-                break;
-            }
-        }
-        // 结束该次译码，进行数据统计
-        thread_output_info.total_frames++;
-        if (!success_decode) {
-            // 译码失败，进行错误译码信息统计
-            error_data_stastics(init_codeword, decode_codeword,
-                                thread_output_info.error_bits,
-                                thread_output_info.error_frames);
-        }
-    }
-
-    // 获取结束时间点
-    auto end_time = std::chrono::high_resolution_clock::now();
-    // 计算时间差，单位为秒
-    std::chrono::duration<double> elapsed_seconds = end_time - start_time;
-
-    // 将时间转换为分钟和秒
-    thread_output_info.sim_minutes =
-        static_cast<int>(elapsed_seconds.count()) / 60;
-    thread_output_info.sim_seconds =
-        elapsed_seconds.count() - (thread_output_info.sim_minutes * 60);
-
-    // 记录总的误帧率
-    thread_output_info.error_frames_rate =
-        (thread_output_info.error_frames * 1.0) /
-        thread_output_info.total_frames;
-
-    // 记录总的误比特率
-    thread_output_info.error_bits_rate = (thread_output_info.error_bits * 1.0) /
-                                         (thread_output_info.total_frames * N);
-
-    std::cout << "信噪比 " << snr << " 仿真结束" << std::endl;
+    generate_critical_sets(frozen_bits);
 }
