@@ -1,6 +1,8 @@
 #include <Eigen/Dense>
 #include <cmath>
 #include <iostream>
+#include <vector>
+
 // 递归函数，用于更新所有的非叶子节点的子节点为 1
 void update_non_leaf_nodes(Eigen::MatrixXi &matrix, int i, int j, int depth) {
     // 如果已经到达最后一层，则返回
@@ -38,7 +40,8 @@ void update_leaf_nodes(int i, int j, int depth, Eigen::VectorXi &flag_cs) {
 }
 
 // 基于码率为1的码树生成的关键集
-void generate_critical_sets(Eigen::VectorXi &frozen_bits) {
+void generate_critical_sets(Eigen::VectorXi &frozen_bits,
+                            std::vector<int> &critical_sets) {
     // 创建一个N × (logN + 1)的空矩阵
     int cols = frozen_bits.size();
     int rows = static_cast<int>(std::log2(cols)) + 1;
@@ -98,6 +101,12 @@ void generate_critical_sets(Eigen::VectorXi &frozen_bits) {
         }
     }
 
+    // 遍历flag_cs向量，将值为1的索引赋值给critical_sets
+    for (size_t i = 0; i < cols; i++) {
+        if (flag_cs(i) == 1) {
+            critical_sets.push_back(i);
+        }
+    }
 
     // for (size_t i = 0; i < cols; i++) {
     //     if (flag_cs(i) == 1) {

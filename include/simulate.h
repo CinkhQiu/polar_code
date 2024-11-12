@@ -61,7 +61,7 @@ void polar_decode(Eigen::VectorXi &codeword) {
 // 初始化左右信息矩阵
 void init_left_right_info(Eigen::MatrixXd &left_info,
                           Eigen::MatrixXd &right_info,
-                          Eigen::VectorXd &received_codeword,
+                          const Eigen::VectorXd &received_codeword,
                           Eigen::VectorXi &frozen_bits) {
     // 初始化右信息矩阵的第 0 列
     for (int i = 0; i < frozen_bits.size(); ++i) {
