@@ -14,7 +14,12 @@
 #include <thread>
 #include <vector>
 
-constexpr int N = 256; // 码长
+// bug记录，码长为128的情况下仿真bp-flip译码算法
+// 要以3.5信噪比为分界点，分两次仿真
+// 例如1.0-3.0，3.5-5.0
+// 可能是多线程的问题，暂时我排查不出来
+
+constexpr int N = 128; // 码长
 constexpr double RATE = 0.5;
 constexpr double START_SNR = 1.0;
 constexpr double END_SNR = 5.0;
@@ -123,8 +128,8 @@ int main() {
     read_frozen_bits(frozen_bits, file_name);
 
     // critical_sets_run();
-    threads_run();
-    // bit_flip_simu_test();
+    // threads_run();
+    bit_flip_simu_test();
     return 0;
 }
 
