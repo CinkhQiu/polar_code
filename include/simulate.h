@@ -74,3 +74,16 @@ void init_left_right_info(Eigen::MatrixXd &left_info,
         left_info(i, last_col) = received_codeword(i);
     }
 }
+
+// 信噪比从对数值转换为线性值
+double get_snr_to_sigma(double SNR, double rate) {
+    // 将 SNR 从 dB 转换为线性值
+    double snr_linear = std::pow(10.0, SNR / 10.0);
+
+    // 计算方差
+    double variance = 1.0 / (2.0 * rate * snr_linear);
+
+    // 计算标准差 sigma
+    double sigma = std::sqrt(variance);
+    return sigma;
+}

@@ -19,7 +19,7 @@
 // 例如1.0-3.0，3.5-5.0
 // 可能是多线程的问题，暂时我排查不出来
 
-constexpr int N = 128; // 码长
+constexpr int N = 8; // 码长
 constexpr double RATE = 0.5;
 constexpr double START_SNR = 1.0;
 constexpr double END_SNR = 5.0;
@@ -38,7 +38,7 @@ const std::string file_name =
      ("2^" + std::to_string(LOG_N) + "_by2_5_dB_GA.txt"))
         .string();
 
-// 创建文件名
+// 创建bp译码算法仿真的文件名
 std::string output_file_name =
     (fs::path("resources") / "output_file" /
      ("_output_2^" + std::to_string(LOG_N) + "_by2_5_dB_GA.txt"))
@@ -46,8 +46,14 @@ std::string output_file_name =
 
 // 创建基于cs翻转集合的bp-flip译码算法仿真结果保存文件名
 std::string output_file_bp_flip_cs_name =
-    (fs::path("resources") / "output_file" /
+    (fs::path("resources") / "" /
      ("_output_bp_flip_cs_2^" + std::to_string(LOG_N) + "_by2_5_dB_GA.txt"))
+        .string();
+
+// 创建bp译码数据采集的文件名
+std::string output_datasets_file_name =
+    (fs::path("resources") / "datasets" /
+     ("_output_bp_datasets_2^" + std::to_string(LOG_N) + "_by2_5_dB_GA.csv"))
         .string();
 
 struct output_info {
@@ -67,6 +73,46 @@ struct output_info {
 std::mt19937
     generator(std::chrono::steady_clock::now().time_since_epoch().count());
 std::uniform_int_distribution<int> dist(0, 1);
+
+// 生成随机码字
+void generate_codeword(Eigen::VectorXi &codeword, Eigen::VectorXi &frozen_bits);
+
+// BPSK 调制并添加 AWGN 噪声
+void add_awgn_noise(Eigen::VectorXd &encode_code, double sigma);
+
+// 完成一次信噪比下的仿真
+// 输入参数：冻结位向量，信噪比，output_info
+void run(Eigen::VectorXi &frozen_bits, double snr,
+         output_info &thread_output_info);
+
+// 多线程信噪比仿真测试
+void threads_run();
+
+// 关键集生成运行测试
+void critical_sets_run();
+
+// 完成一次信噪比下的仿真
+// 输入参数：冻结位向量，信噪比，output_info
+void cs_bp_flip_run(Eigen::VectorXi &frozen_bits, double snr,
+                    output_info &thread_output_info);
+
+// 基于关键集的比特翻转译码算法性能仿真测试
+void bit_flip_simu_test();
+
+// bp译码算法数据集的采集
+// 当前数据集只在一个信噪比下采集
+void generate_bp_datasets(int max_count, double snr);
+
+int main() {
+    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(N);
+    read_frozen_bits(frozen_bits, file_name);
+
+    // critical_sets_run();
+    // threads_run();
+    // bit_flip_simu_test();
+    generate_bp_datasets(100, 1.0);
+    return 0;
+}
 
 // 生成随机码字
 void generate_codeword(Eigen::VectorXi &codeword,
@@ -90,47 +136,6 @@ void add_awgn_noise(Eigen::VectorXd &encode_code, double sigma) {
         // 添加 AWGN 噪声
         encode_code(i) += distribution(generator);
     }
-}
-
-double get_snr_to_sigma(double SNR, double rate) {
-    // 将 SNR 从 dB 转换为线性值
-    double snr_linear = std::pow(10.0, SNR / 10.0);
-
-    // 计算方差
-    double variance = 1.0 / (2.0 * rate * snr_linear);
-
-    // 计算标准差 sigma
-    double sigma = std::sqrt(variance);
-    return sigma;
-}
-
-// 完成一次信噪比下的仿真
-// 输入参数：冻结位向量，信噪比，output_info
-void run(Eigen::VectorXi &frozen_bits, double snr,
-         output_info &thread_output_info);
-
-// 多线程信噪比仿真测试
-void threads_run();
-
-// 关键集生成运行测试
-void critical_sets_run();
-
-// 完成一次信噪比下的仿真
-// 输入参数：冻结位向量，信噪比，output_info
-void cs_bp_flip_run(Eigen::VectorXi &frozen_bits, double snr,
-                    output_info &thread_output_info);
-
-// 基于关键集的比特翻转译码算法性能仿真测试
-void bit_flip_simu_test();
-
-int main() {
-    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(N);
-    read_frozen_bits(frozen_bits, file_name);
-
-    // critical_sets_run();
-    // threads_run();
-    bit_flip_simu_test();
-    return 0;
 }
 
 // 完成一次信噪比下的仿真
@@ -224,6 +229,7 @@ void run(Eigen::VectorXi &frozen_bits, double snr,
               << std::endl;
 }
 
+// bp译码算法的多线程仿真
 void threads_run() {
     // 读取冻结位信息
     Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(N);
@@ -342,6 +348,7 @@ void critical_sets_run() {
     generate_critical_sets(frozen_bits, critical_sets);
 }
 
+// cs-bp-flip译码算法的多线程性能仿真
 // 基于关键集的比特翻转译码算法性能仿真测试
 void bit_flip_simu_test() {
     // 读取冻结位信息
@@ -440,7 +447,8 @@ void bit_flip_simu_test() {
         output_file << "当前误比特率为" << std::fixed << std::setprecision(8)
                     << all_output_info[i].error_bits_rate << "\n";
         // 记录总的翻转成功帧数
-        output_file << "翻转成功帧数为" << all_output_info[i].flip_success << "\n";
+        output_file << "翻转成功帧数为" << all_output_info[i].flip_success
+                    << "\n";
         // 记录总的迭代次数
         output_file << "BP译码总迭代次数为：" << all_output_info[i].total_iter
                     << "\n";
@@ -453,7 +461,7 @@ void bit_flip_simu_test() {
     output_file.close(); // 关闭文件
 }
 
-// 完成一次信噪比下的仿真
+// cs-bp-flip译码算法一次信噪比下的仿真
 // 输入参数：冻结位向量，信噪比，output_info
 void cs_bp_flip_run(Eigen::VectorXi &frozen_bits, double snr,
                     output_info &thread_output_info) {
@@ -516,8 +524,8 @@ void cs_bp_flip_run(Eigen::VectorXi &frozen_bits, double snr,
             }
         }
 
-        // 若当前译码失败，进入到bit-flip译码算法中
-        #if 1
+// 若当前译码失败，进入到bit-flip译码算法中
+#if 1
         if (!success_decode) {
             // 译码失败，进入到bp-flip译码算法中
             // 遍历翻转集合
@@ -558,7 +566,7 @@ void cs_bp_flip_run(Eigen::VectorXi &frozen_bits, double snr,
                 }
             }
         }
-        #endif
+#endif
 
         // 信息统计
         // 结束该次译码，进行数据统计
@@ -594,6 +602,101 @@ void cs_bp_flip_run(Eigen::VectorXi &frozen_bits, double snr,
 
     std::cout << "sigma " << snr << " 仿真结束"
               << "，误码率为：" << thread_output_info.error_frames_rate
-              << "，翻转成功数为：" << thread_output_info.flip_success << "总帧数为："
-              << thread_output_info.total_frames << std::endl;
+              << "，翻转成功数为：" << thread_output_info.flip_success
+              << "总帧数为：" << thread_output_info.total_frames << std::endl;
+}
+
+// bp译码算法数据集的采集
+// 当前数据集只在一个信噪比下采集
+void generate_bp_datasets(int max_count, double snr) {
+    // 冻结位的数据读取
+    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(N);
+    read_frozen_bits(frozen_bits, file_name);
+
+    // 信噪比转换为线性信噪比
+    snr = get_snr_to_sigma(snr, 0.5);
+
+    // 当前数据集的索引
+    int count = 0;
+    std::ifstream read_file(output_datasets_file_name);
+    // 检查文件是否成功打开
+    if (!read_file.is_open()) {
+        std::cerr << "无法打开文件进行读取！count赋值为0" << std::endl;
+    } else {
+        count = get_numbers_of_datasets(read_file) + 1;
+        std::cout << "当前共有 " << count - 1 << "条数据" << std::endl;
+    }
+    read_file.close();
+
+    // 打开输出文件
+    std::ofstream out_file(output_datasets_file_name, std::ios::app);
+    if (!out_file) {
+        std::cerr << "无法打开数据集输出文件！" << std::endl;
+        return;
+    }
+    // 数据集采集
+    std::cout << "数据开始采集" << std::endl;
+    // 用于控制while的循环变量
+    int curr = 0;
+    while (curr < max_count) {
+        // 完成单次bp译码仿真
+        // 单次码字仿真
+
+        // 生成随机码字
+        Eigen::VectorXi init_codeword = Eigen::VectorXi::Zero(N);
+        generate_codeword(init_codeword, frozen_bits);
+        // 存留生成后的随机码字
+        Eigen::VectorXi int_encode_codeword = init_codeword;
+        // 编码
+        polar_encode(int_encode_codeword);
+        // 码字向量转换为double元素类型
+        Eigen::VectorXd encode_codeword = int_encode_codeword.cast<double>();
+
+        // 添加噪声
+        add_awgn_noise(encode_codeword, snr);
+        // 接受向量别名，方便阅读
+        const auto &received_codeword = encode_codeword;
+
+        // 译码
+        // 声明左右矩阵
+        Eigen::MatrixXd left_info(N, LAYER);
+        Eigen::MatrixXd right_info(N, LAYER);
+        // 初始化左右矩阵
+        init_left_right_info(left_info, right_info, received_codeword,
+                             frozen_bits);
+        // 码字判决后的码字
+        Eigen::VectorXi decode_codeword = Eigen::VectorXi::Zero(N);
+        // 记录当前译码成功标志
+        bool success_decode = false;
+        // 左右信息迭代计算
+        for (size_t iter = 0; iter < MAX_ITER; iter++) {
+            success_decode = false;
+            // 向左计算
+            left_cacl(left_info, right_info, N);
+            // 向右计算
+            right_cacl(left_info, right_info, N);
+
+            // 码字判决
+            get_decode_codeword(left_info, right_info, decode_codeword);
+            // 检验是否译码成功
+            if (check_encode_success(init_codeword, decode_codeword)) {
+                // 译码成功，无需进行后续迭代
+                success_decode = true;
+                break;
+            }
+        }
+
+        // 结束该次译码，对于译码失败的情况进行数据采集
+        if (!success_decode) {
+            // 生成错误比特向量
+            Eigen::VectorXi error_bits_vector = init_codeword, decode_codeword;
+            // 译码失败，进行数据集的采集
+            output_datasets_csv(out_file, left_info, error_bits_vector, count);
+            // std::cout << "采集第 " << curr << " 条数据" << '\n';
+            count++;
+            curr++;
+        }
+    }
+
+    out_file.close();
 }
