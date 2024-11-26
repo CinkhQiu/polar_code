@@ -53,13 +53,25 @@ void output_datasets_csv(std::ofstream &file, const Eigen::MatrixXd &left_info,
     int rows = error_bits_vector.rows();
     int cols = left_info.cols();
 
+    // 创建副本
+    Eigen::VectorXi one_hot_vector = error_bits_vector;
+
+    // 遍历找到第一个 1 的位置并构造 one-hot 编码
+    one_hot_vector.setZero(); // 先将所有位置置为 0
+    for (int i = 0; i < error_bits_vector.size(); ++i) {
+        if (error_bits_vector(i) == 1) {
+            one_hot_vector(i) = 1; // 保留第一个 1
+            break;                // 退出循环
+        }
+    }
+
     // 输出数据csv文件中
     for (size_t i = 0; i < rows; i++) {
         file << count << ",";
         for (size_t j = 0; j < cols; j++) {
             file << left_info(i, j) << ",";
         }
-        file << error_bits_vector(i) << '\n';
+        file << one_hot_vector(i) << '\n';
     }
 }
 
