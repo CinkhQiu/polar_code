@@ -2,3 +2,4 @@ build/
 bin/
 .vscode/
 *.Zone.Identifier
+tests/unit/bin/
