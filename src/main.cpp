@@ -4,6 +4,7 @@
 #include "func.h"
 #include "polar_bp_decode.h"
 #include "simulate.h"
+#include "config.hpp"
 #include <Eigen/Dense>
 #include <chrono>
 #include <filesystem>
@@ -18,43 +19,6 @@
 // 要以3.5信噪比为分界点，分两次仿真
 // 例如1.0-3.0，3.5-5.0
 // 可能是多线程的问题，暂时我排查不出来
-
-constexpr int N = 8; // 码长
-constexpr double RATE = 0.5;
-constexpr double START_SNR = 1.0;
-constexpr double END_SNR = 5.0;
-constexpr double STEP = 0.5;
-const int TOTAL_STEP_NUMS =
-    static_cast<int>(std::round((END_SNR - START_SNR) / STEP) + 1);
-constexpr int MAX_FRAME = static_cast<int>(1e6);
-constexpr int MAX_ERROR_FRAME = 200;
-const int LAYER = static_cast<int>(std::log2(N)) + 1;
-const int LOG_N = LAYER - 1;
-constexpr int MAX_ITER = 10;
-
-namespace fs = std::filesystem;
-const std::string file_name =
-    (fs::path("resources") / "frozen_bits_file" /
-     ("2^" + std::to_string(LOG_N) + "_by2_5_dB_GA.txt"))
-        .string();
-
-// 创建bp译码算法仿真的文件名
-std::string output_file_name =
-    (fs::path("resources") / "output_file" /
-     ("_output_2^" + std::to_string(LOG_N) + "_by2_5_dB_GA.txt"))
-        .string();
-
-// 创建基于cs翻转集合的bp-flip译码算法仿真结果保存文件名
-std::string output_file_bp_flip_cs_name =
-    (fs::path("resources") / "" /
-     ("_output_bp_flip_cs_2^" + std::to_string(LOG_N) + "_by2_5_dB_GA.txt"))
-        .string();
-
-// 创建bp译码数据采集的文件名
-std::string output_datasets_file_name =
-    (fs::path("resources") / "datasets" /
-     ("_output_bp_datasets_2^" + std::to_string(LOG_N) + "_by2_5_dB_GA.csv"))
-        .string();
 
 struct output_info {
     double curr_snr;
@@ -104,8 +68,8 @@ void bit_flip_simu_test();
 void generate_bp_datasets(int max_count, double snr);
 
 int main() {
-    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(N);
-    read_frozen_bits(frozen_bits, file_name);
+    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(config::N);
+    read_frozen_bits(frozen_bits, config::frozen_bits_file_name);
 
     // critical_sets_run();
     // threads_run();
@@ -145,12 +109,12 @@ void run(Eigen::VectorXi &frozen_bits, double snr,
     // 程序开始计时
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    while (thread_output_info.total_frames < MAX_FRAME &&
-           thread_output_info.error_frames < MAX_ERROR_FRAME) {
+    while (thread_output_info.total_frames < config::MAX_FRAME &&
+           thread_output_info.error_frames < config::MAX_ERROR_FRAME) {
         // 单次码字仿真
 
         // 生成随机码字
-        Eigen::VectorXi init_codeword = Eigen::VectorXi::Zero(N);
+        Eigen::VectorXi init_codeword = Eigen::VectorXi::Zero(config::N);
         generate_codeword(init_codeword, frozen_bits);
         // 存留生成后的随机码字
         Eigen::VectorXi int_encode_codeword = init_codeword;
@@ -166,22 +130,22 @@ void run(Eigen::VectorXi &frozen_bits, double snr,
 
         // 译码
         // 声明左右矩阵
-        Eigen::MatrixXd left_info(N, LAYER);
-        Eigen::MatrixXd right_info(N, LAYER);
+        Eigen::MatrixXd left_info(config::N, config::LAYER);
+        Eigen::MatrixXd right_info(config::N, config::LAYER);
         // 初始化左右矩阵
         init_left_right_info(left_info, right_info, received_codeword,
                              frozen_bits);
         // 码字判决后的码字
-        Eigen::VectorXi decode_codeword = Eigen::VectorXi::Zero(N);
+        Eigen::VectorXi decode_codeword = Eigen::VectorXi::Zero(config::N);
         // 记录当前译码成功标志
         bool success_decode = false;
         // 左右信息迭代计算
-        for (size_t iter = 0; iter < MAX_ITER; iter++) {
+        for (size_t iter = 0; iter < config::MAX_ITER; iter++) {
             success_decode = false;
             // 向左计算
-            left_cacl(left_info, right_info, N);
+            left_cacl(left_info, right_info, config::N);
             // 向右计算
-            right_cacl(left_info, right_info, N);
+            right_cacl(left_info, right_info, config::N);
 
             // 码字判决
             get_decode_codeword(left_info, right_info, decode_codeword);
@@ -197,7 +161,7 @@ void run(Eigen::VectorXi &frozen_bits, double snr,
         thread_output_info.total_frames++;
         if (!success_decode) {
             // 译码失败，进行错误译码信息统计
-            thread_output_info.total_iter += MAX_ITER;
+            thread_output_info.total_iter += config::MAX_ITER;
             error_data_stastics(init_codeword, decode_codeword,
                                 thread_output_info.error_bits,
                                 thread_output_info.error_frames);
@@ -222,7 +186,7 @@ void run(Eigen::VectorXi &frozen_bits, double snr,
 
     // 记录总的误比特率
     thread_output_info.error_bits_rate = (thread_output_info.error_bits * 1.0) /
-                                         (thread_output_info.total_frames * N);
+                                         (thread_output_info.total_frames * config::N);
 
     std::cout << "sigma " << snr << " 仿真结束"
               << "，误码率为：" << thread_output_info.error_frames_rate
@@ -232,25 +196,25 @@ void run(Eigen::VectorXi &frozen_bits, double snr,
 // bp译码算法的多线程仿真
 void threads_run() {
     // 读取冻结位信息
-    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(N);
-    read_frozen_bits(frozen_bits, file_name);
+    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(config::N);
+    read_frozen_bits(frozen_bits, config::frozen_bits_file_name);
 
     // 创建固定数量的线程
     std::vector<std::thread> threads;
     // 创建用于存储仿真信息的vector
-    std::vector<output_info> all_output_info(TOTAL_STEP_NUMS);
+    std::vector<output_info> all_output_info(config::TOTAL_STEP_NUMS);
 
     // 生成信噪比标准差向量
-    std::vector<double> snr_to_sigma(TOTAL_STEP_NUMS);
-    double curr_snr = START_SNR;
-    for (size_t i = 0; i < TOTAL_STEP_NUMS; i++) {
+    std::vector<double> snr_to_sigma(config::TOTAL_STEP_NUMS);
+    double curr_snr = config::START_SNR;
+    for (size_t i = 0; i < config::TOTAL_STEP_NUMS; i++) {
         // 生成当前信噪比下的标准差
-        snr_to_sigma[i] = get_snr_to_sigma(curr_snr, RATE);
-        curr_snr += STEP;
+        snr_to_sigma[i] = get_snr_to_sigma(curr_snr, config::RATE);
+        curr_snr += config::STEP;
     }
 
     // 打开文件
-    std::ofstream output_file(output_file_name, std::ios::app);
+    std::ofstream output_file(config::output_file_name, std::ios::app);
     if (output_file.is_open()) {
         // 朝输出文件中添加日期
         output_file << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++"
@@ -258,7 +222,7 @@ void threads_run() {
                     << "\n";
         output_file << "++++++++++++++++++++++" << get_current_date() << "\n";
         output_file << "---------------------"
-                    << "多线程版本：当前仿真码长为：" << N
+                    << "多线程版本：当前仿真码长为：" << config::N
                     << "---------------------"
                     << "\n";
     } else {
@@ -269,8 +233,8 @@ void threads_run() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // 创建多线程
-    for (size_t i = 0; i < TOTAL_STEP_NUMS; i++) {
-        all_output_info[i].curr_snr = START_SNR + STEP * i;
+    for (size_t i = 0; i < config::TOTAL_STEP_NUMS; i++) {
+        all_output_info[i].curr_snr = config::START_SNR + config::STEP * i;
         threads.emplace_back(run, std::ref(frozen_bits), snr_to_sigma[i],
                              std::ref(all_output_info[i]));
     }
@@ -299,11 +263,11 @@ void threads_run() {
     }
 
     // 向文件中输出结果
-    for (size_t i = 0; i < TOTAL_STEP_NUMS; i++) {
+    for (size_t i = 0; i < config::TOTAL_STEP_NUMS; i++) {
         // 记录当前仿真信噪比
         output_file << "****************"
                     << "当前仿真信噪比为：" << std::fixed
-                    << std::setprecision(2) << START_SNR + STEP * i
+                    << std::setprecision(2) << config::START_SNR + config::STEP * i
                     << "****************"
                     << "\n";
         // 记录当前信噪比仿真耗时
@@ -311,9 +275,9 @@ void threads_run() {
                     << " 分 " << all_output_info[i].sim_seconds << " 秒"
                     << "\n";
         // 当前仿真允许最大帧数
-        output_file << "当前仿真允许最大帧数：" << MAX_FRAME << "\n";
+        output_file << "当前仿真允许最大帧数：" << config::MAX_FRAME << "\n";
         // 当前仿真允许最大错误帧数
-        output_file << "当前仿真允许最大错误帧数：" << MAX_ERROR_FRAME << "\n";
+        output_file << "当前仿真允许最大错误帧数：" << config::MAX_ERROR_FRAME << "\n";
         // 记录总的仿真次数
         output_file << "当前仿真次数为：" << all_output_info[i].total_frames
                     << "\n";
@@ -341,8 +305,8 @@ void threads_run() {
 // 关键集生成运行测试
 void critical_sets_run() {
     // 读取冻结位信息
-    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(N);
-    read_frozen_bits(frozen_bits, file_name);
+    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(config::N);
+    read_frozen_bits(frozen_bits, config::frozen_bits_file_name);
     std::vector<int> critical_sets;
 
     generate_critical_sets(frozen_bits, critical_sets);
@@ -352,25 +316,25 @@ void critical_sets_run() {
 // 基于关键集的比特翻转译码算法性能仿真测试
 void bit_flip_simu_test() {
     // 读取冻结位信息
-    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(N);
-    read_frozen_bits(frozen_bits, file_name);
+    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(config::N);
+    read_frozen_bits(frozen_bits, config::frozen_bits_file_name);
 
     // 创建固定数量的线程
     std::vector<std::thread> threads;
     // 创建用于存储仿真信息的vector
-    std::vector<output_info> all_output_info(TOTAL_STEP_NUMS);
+    std::vector<output_info> all_output_info(config::TOTAL_STEP_NUMS);
 
     // 生成信噪比标准差向量
-    std::vector<double> snr_to_sigma(TOTAL_STEP_NUMS);
-    double curr_snr = START_SNR;
-    for (size_t i = 0; i < TOTAL_STEP_NUMS; i++) {
+    std::vector<double> snr_to_sigma(config::TOTAL_STEP_NUMS);
+    double curr_snr = config::START_SNR;
+    for (size_t i = 0; i < config::TOTAL_STEP_NUMS; i++) {
         // 生成当前信噪比下的标准差
-        snr_to_sigma[i] = get_snr_to_sigma(curr_snr, RATE);
-        curr_snr += STEP;
+        snr_to_sigma[i] = get_snr_to_sigma(curr_snr, config::RATE);
+        curr_snr += config::STEP;
     }
 
     // 打开文件
-    std::ofstream output_file(output_file_bp_flip_cs_name, std::ios::app);
+    std::ofstream output_file(config::output_file_bp_flip_cs_name, std::ios::app);
     if (output_file.is_open()) {
         // 朝输出文件中添加日期
         output_file << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++"
@@ -378,7 +342,7 @@ void bit_flip_simu_test() {
                     << "\n";
         output_file << "++++++++++++++++++++++" << get_current_date() << "\n";
         output_file << "---------------------"
-                    << "CS-BP-Flip译码算法：多线程版本：当前仿真码长为：" << N
+                    << "CS-BP-Flip译码算法：多线程版本：当前仿真码长为：" << config::N
                     << "---------------------"
                     << "\n";
     } else {
@@ -389,8 +353,8 @@ void bit_flip_simu_test() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // 创建多线程
-    for (size_t i = 0; i < TOTAL_STEP_NUMS; i++) {
-        all_output_info[i].curr_snr = START_SNR + STEP * i;
+    for (size_t i = 0; i < config::TOTAL_STEP_NUMS; i++) {
+        all_output_info[i].curr_snr = config::START_SNR + config::STEP * i;
         threads.emplace_back(cs_bp_flip_run, std::ref(frozen_bits),
                              snr_to_sigma[i], std::ref(all_output_info[i]));
     }
@@ -419,11 +383,11 @@ void bit_flip_simu_test() {
     }
 
     // 向文件中输出结果
-    for (size_t i = 0; i < TOTAL_STEP_NUMS; i++) {
+    for (size_t i = 0; i < config::TOTAL_STEP_NUMS; i++) {
         // 记录当前仿真信噪比
         output_file << "****************"
                     << "当前仿真信噪比为：" << std::fixed
-                    << std::setprecision(2) << START_SNR + STEP * i
+                    << std::setprecision(2) << config::START_SNR + config::STEP * i
                     << "****************"
                     << "\n";
         // 记录当前信噪比仿真耗时
@@ -431,9 +395,9 @@ void bit_flip_simu_test() {
                     << " 分 " << all_output_info[i].sim_seconds << " 秒"
                     << "\n";
         // 当前仿真允许最大帧数
-        output_file << "当前仿真允许最大帧数：" << MAX_FRAME << "\n";
+        output_file << "当前仿真允许最大帧数：" << config::MAX_FRAME << "\n";
         // 当前仿真允许最大错误帧数
-        output_file << "当前仿真允许最大错误帧数：" << MAX_ERROR_FRAME << "\n";
+        output_file << "当前仿真允许最大错误帧数：" << config::MAX_ERROR_FRAME << "\n";
         // 记录总的仿真次数
         output_file << "当前仿真次数为：" << all_output_info[i].total_frames
                     << "\n";
@@ -468,12 +432,12 @@ void cs_bp_flip_run(Eigen::VectorXi &frozen_bits, double snr,
     // 程序开始计时
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    while (thread_output_info.total_frames < MAX_FRAME &&
-           thread_output_info.error_frames < MAX_ERROR_FRAME) {
+    while (thread_output_info.total_frames < config::MAX_FRAME &&
+           thread_output_info.error_frames < config::MAX_ERROR_FRAME) {
         // 单次码字仿真
 
         // 生成随机码字
-        Eigen::VectorXi init_codeword = Eigen::VectorXi::Zero(N);
+        Eigen::VectorXi init_codeword = Eigen::VectorXi::Zero(config::N);
         generate_codeword(init_codeword, frozen_bits);
         // 存留生成后的随机码字
         Eigen::VectorXi int_encode_codeword = init_codeword;
@@ -496,22 +460,22 @@ void cs_bp_flip_run(Eigen::VectorXi &frozen_bits, double snr,
 
         // 译码
         // 声明左右矩阵
-        Eigen::MatrixXd left_info(N, LAYER);
-        Eigen::MatrixXd right_info(N, LAYER);
+        Eigen::MatrixXd left_info(config::N, config::LAYER);
+        Eigen::MatrixXd right_info(config::N, config::LAYER);
         // 初始化左右矩阵
         init_left_right_info(left_info, right_info, received_codeword,
                              frozen_bits);
         // 码字判决后的码字
-        Eigen::VectorXi decode_codeword = Eigen::VectorXi::Zero(N);
+        Eigen::VectorXi decode_codeword = Eigen::VectorXi::Zero(config::N);
         // 记录当前译码成功标志
         bool success_decode = false;
         // 左右信息迭代计算
-        for (size_t iter = 0; iter < MAX_ITER; iter++) {
+        for (size_t iter = 0; iter < config::MAX_ITER; iter++) {
             success_decode = false;
             // 向左计算
-            left_cacl(left_info, right_info, N);
+            left_cacl(left_info, right_info, config::N);
             // 向右计算
-            right_cacl(left_info, right_info, N);
+            right_cacl(left_info, right_info, config::N);
 
             // 码字判决
             get_decode_codeword(left_info, right_info, decode_codeword);
@@ -543,12 +507,12 @@ void cs_bp_flip_run(Eigen::VectorXi &frozen_bits, double snr,
 
                 // 翻转后重新进入到bp译码算法中进行译码
                 // 左右信息迭代计算
-                for (size_t iter = 0; iter < MAX_ITER; iter++) {
+                for (size_t iter = 0; iter < config::MAX_ITER; iter++) {
                     success_decode = false;
                     // 向左计算
-                    left_cacl(left_info, right_info, N);
+                    left_cacl(left_info, right_info, config::N);
                     // 向右计算
-                    right_cacl(left_info, right_info, N);
+                    right_cacl(left_info, right_info, config::N);
 
                     // 码字判决
                     get_decode_codeword(left_info, right_info, decode_codeword);
@@ -573,7 +537,7 @@ void cs_bp_flip_run(Eigen::VectorXi &frozen_bits, double snr,
         thread_output_info.total_frames++;
         if (!success_decode) {
             // 译码失败，进行错误译码信息统计
-            thread_output_info.total_iter += MAX_ITER;
+            thread_output_info.total_iter += config::MAX_ITER;
             error_data_stastics(init_codeword, decode_codeword,
                                 thread_output_info.error_bits,
                                 thread_output_info.error_frames);
@@ -598,7 +562,7 @@ void cs_bp_flip_run(Eigen::VectorXi &frozen_bits, double snr,
 
     // 记录总的误比特率
     thread_output_info.error_bits_rate = (thread_output_info.error_bits * 1.0) /
-                                         (thread_output_info.total_frames * N);
+                                         (thread_output_info.total_frames * config::N);
 
     std::cout << "sigma " << snr << " 仿真结束"
               << "，误码率为：" << thread_output_info.error_frames_rate
@@ -610,15 +574,15 @@ void cs_bp_flip_run(Eigen::VectorXi &frozen_bits, double snr,
 // 当前数据集只在一个信噪比下采集
 void generate_bp_datasets(int max_count, double snr) {
     // 冻结位的数据读取
-    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(N);
-    read_frozen_bits(frozen_bits, file_name);
+    Eigen::VectorXi frozen_bits = Eigen::VectorXi::Zero(config::N);
+    read_frozen_bits(frozen_bits, config::frozen_bits_file_name);
 
     // 信噪比转换为线性信噪比
     snr = get_snr_to_sigma(snr, 0.5);
 
     // 当前数据集的索引
     int count = 0;
-    std::ifstream read_file(output_datasets_file_name);
+    std::ifstream read_file(config::output_datasets_file_name);
     // 检查文件是否成功打开
     if (!read_file.is_open()) {
         std::cerr << "无法打开文件进行读取！count赋值为0" << std::endl;
@@ -629,7 +593,7 @@ void generate_bp_datasets(int max_count, double snr) {
     read_file.close();
 
     // 打开输出文件
-    std::ofstream out_file(output_datasets_file_name, std::ios::app);
+    std::ofstream out_file(config::output_datasets_file_name, std::ios::app);
     if (!out_file) {
         std::cerr << "无法打开数据集输出文件！" << std::endl;
         return;
@@ -643,7 +607,7 @@ void generate_bp_datasets(int max_count, double snr) {
         // 单次码字仿真
 
         // 生成随机码字
-        Eigen::VectorXi init_codeword = Eigen::VectorXi::Zero(N);
+        Eigen::VectorXi init_codeword = Eigen::VectorXi::Zero(config::N);
         generate_codeword(init_codeword, frozen_bits);
         // 存留生成后的随机码字
         Eigen::VectorXi int_encode_codeword = init_codeword;
@@ -659,22 +623,22 @@ void generate_bp_datasets(int max_count, double snr) {
 
         // 译码
         // 声明左右矩阵
-        Eigen::MatrixXd left_info(N, LAYER);
-        Eigen::MatrixXd right_info(N, LAYER);
+        Eigen::MatrixXd left_info(config::N, config::LAYER);
+        Eigen::MatrixXd right_info(config::N, config::LAYER);
         // 初始化左右矩阵
         init_left_right_info(left_info, right_info, received_codeword,
                              frozen_bits);
         // 码字判决后的码字
-        Eigen::VectorXi decode_codeword = Eigen::VectorXi::Zero(N);
+        Eigen::VectorXi decode_codeword = Eigen::VectorXi::Zero(config::N);
         // 记录当前译码成功标志
         bool success_decode = false;
         // 左右信息迭代计算
-        for (size_t iter = 0; iter < MAX_ITER; iter++) {
+        for (size_t iter = 0; iter < config::MAX_ITER; iter++) {
             success_decode = false;
             // 向左计算
-            left_cacl(left_info, right_info, N);
+            left_cacl(left_info, right_info, config::N);
             // 向右计算
-            right_cacl(left_info, right_info, N);
+            right_cacl(left_info, right_info, config::N);
 
             // 码字判决
             get_decode_codeword(left_info, right_info, decode_codeword);
