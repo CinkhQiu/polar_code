@@ -4,7 +4,7 @@
 #include <vector>
 
 // 递归函数，用于更新所有的非叶子节点的子节点为 1
-void update_non_leaf_nodes(Eigen::MatrixXi &matrix, int i, int j, int depth) {
+inline void update_non_leaf_nodes(Eigen::MatrixXi &matrix, int i, int j, int depth) {
     // 如果已经到达最后一层，则返回
     if (i >= depth - 2) {
         return;
@@ -20,7 +20,7 @@ void update_non_leaf_nodes(Eigen::MatrixXi &matrix, int i, int j, int depth) {
 }
 
 // 更新当前节点所对应的所有的叶子节点的值，更新值的操作在flag_cs上进行
-void update_leaf_nodes(int i, int j, int depth, Eigen::VectorXi &flag_cs) {
+inline void update_leaf_nodes(int i, int j, int depth, Eigen::VectorXi &flag_cs) {
     // 再计算（i， 0）节点的最左索引
     int i_0_left_index = 0;
     // 先计算（i， 0）节点的最右索引
@@ -40,7 +40,7 @@ void update_leaf_nodes(int i, int j, int depth, Eigen::VectorXi &flag_cs) {
 }
 
 // 基于码率为1的码树生成的关键集
-void generate_critical_sets(Eigen::VectorXi &frozen_bits,
+inline void generate_critical_sets(Eigen::VectorXi &frozen_bits,
                             std::vector<int> &critical_sets) {
     // 创建一个N × (logN + 1)的空矩阵
     int cols = frozen_bits.size();

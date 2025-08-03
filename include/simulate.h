@@ -1,10 +1,19 @@
 #pragma once
 #include <Eigen/Dense>
 #include <random>
+#include <thread>
+#include "bp_flip_func.h"
 #include "bp_unit_cacl.h"
+#include "file_in_out.h"
+#include "func.h"
+#include "polar_bp_decode.h"
+#include "config.hpp"
+#include "output_info.hpp"
+#include "dataset_generator.hpp"
+#include "random_utils.hpp"
 
 // 递归编码
-void polar_encode(Eigen::VectorXi &codeword, int N, int start_index = 0) {
+inline void polar_encode(Eigen::VectorXi &codeword, int N, int start_index = 0) {
     if (N == 1) {
         return; // 基准条件，N 为 1 时不再分割
     }
@@ -20,7 +29,7 @@ void polar_encode(Eigen::VectorXi &codeword, int N, int start_index = 0) {
 }
 
 // 使用循环实现蝶形编码
-void polar_encode(Eigen::VectorXi &codeword) {
+inline void polar_encode(Eigen::VectorXi &codeword) {
     int N = codeword.size();
 
     int max_layer = std::log2(N);
@@ -40,7 +49,7 @@ void polar_encode(Eigen::VectorXi &codeword) {
 }
 
 // 蝶形结构解码
-void polar_decode(Eigen::VectorXi &codeword) {
+inline void polar_decode(Eigen::VectorXi &codeword) {
     int N = codeword.size();
     int max_layer = static_cast<int>(std::log2(N)); // 计算并存储最大层数
 
@@ -59,7 +68,7 @@ void polar_decode(Eigen::VectorXi &codeword) {
 }
 
 // 初始化左右信息矩阵
-void init_left_right_info(Eigen::MatrixXd &left_info,
+inline void init_left_right_info(Eigen::MatrixXd &left_info,
                           Eigen::MatrixXd &right_info,
                           const Eigen::VectorXd &received_codeword,
                           Eigen::VectorXi &frozen_bits) {
@@ -76,7 +85,7 @@ void init_left_right_info(Eigen::MatrixXd &left_info,
 }
 
 // 信噪比从对数值转换为线性值
-double get_snr_to_sigma(double SNR, double rate) {
+inline double get_snr_to_sigma(double SNR, double rate) {
     // 将 SNR 从 dB 转换为线性值
     double snr_linear = std::pow(10.0, SNR / 10.0);
 
@@ -87,3 +96,42 @@ double get_snr_to_sigma(double SNR, double rate) {
     double sigma = std::sqrt(variance);
     return sigma;
 }
+
+// 生成随机码字
+inline void generate_codeword(Eigen::VectorXi &codeword, Eigen::VectorXi &frozen_bits) {
+    for (int i = 0; i < frozen_bits.size(); ++i) {
+        if (frozen_bits[i] == 0) {         // 如果当前位置为信息位
+            codeword[i] = rand_bit();  // ✅ 使用线程安全随机比特生成器
+        }
+    }
+}
+
+// BPSK 调制并添加 AWGN 噪声
+inline void add_awgn_noise(Eigen::VectorXd &encode_code, double sigma) {
+    std::mt19937 &rng = get_thread_rng();  // ✅ 每个线程自己的 RNG
+    std::normal_distribution<double> distribution(0.0, sigma);  // ✅ 局部分布对象
+
+    for (int i = 0; i < encode_code.size(); ++i) {
+        encode_code(i) = (encode_code(i) == 0) ? 1.0 : -1.0;  // BPSK
+        encode_code(i) += distribution(rng);  // 添加高斯噪声
+    }
+}
+
+// 完成一次信噪比下的仿真
+// 输入参数：冻结位向量，信噪比，output_info
+void run(Eigen::VectorXi &frozen_bits, double snr,
+         output_info &thread_output_info);
+
+// 多线程信噪比仿真测试
+void threads_run();
+
+// 关键集生成运行测试
+void critical_sets_run();
+
+// 基于关键集的比特翻转译码算法性能仿真测试
+void bit_flip_simu_test();
+
+// 完成一次信噪比下的bit flip仿真
+// 输入参数：冻结位向量，信噪比，output_info
+void cs_bp_flip_run(Eigen::VectorXi &frozen_bits, double snr,
+                    output_info &thread_output_info);

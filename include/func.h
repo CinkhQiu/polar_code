@@ -7,7 +7,7 @@
 #include <sstream>
 #include <string>
 
-void error_data_stastics(Eigen::VectorXi &init_codeword,
+inline void error_data_stastics(Eigen::VectorXi &init_codeword,
                          Eigen::VectorXi &decode_codeword, int &error_bits,
                          int &error_frames) {
     bool frame_has_error = false; // 标记当前帧是否有错误
@@ -24,12 +24,12 @@ void error_data_stastics(Eigen::VectorXi &init_codeword,
     }
 }
 
-bool check_encode_success(Eigen::VectorXi &init_codeword,
+inline bool check_encode_success(Eigen::VectorXi &init_codeword,
                           Eigen::VectorXi &decode_codeword) {
     return init_codeword == decode_codeword;
 }
 
-std::string get_current_date() {
+inline std::string get_current_date() {
     std::time_t now = std::time(nullptr); // 获取当前时间
     std::tm tm_struct;
     // localtime_s(&tm_struct, &now); // 使用线程安全的 localtime_s
@@ -41,7 +41,7 @@ std::string get_current_date() {
     return std::string(buffer);
 }
 
-void output_datasets_csv(std::ofstream &file, const Eigen::MatrixXd &left_info,
+inline void output_datasets_csv(std::ofstream &file, const Eigen::MatrixXd &left_info,
                          const Eigen::VectorXi &error_bits_vector,
                          const int count) {
     // 检查文件流是否有效
@@ -76,7 +76,7 @@ void output_datasets_csv(std::ofstream &file, const Eigen::MatrixXd &left_info,
 }
 
 // 读取csv文件的最后一行的第一列，用以标示当前已有多少条数据
-int get_numbers_of_datasets(std::ifstream &file) {
+inline int get_numbers_of_datasets(std::ifstream &file) {
     if (!file.is_open()) {
         std::cerr << "无法打开文件: " << std::endl;
         return -1;

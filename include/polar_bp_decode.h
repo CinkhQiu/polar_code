@@ -2,7 +2,7 @@
 #include "bp_unit_cacl.h"
 #include <Eigen/Dense>
 
-void left_cacl(Eigen::MatrixXd &left_info, Eigen::MatrixXd &right_info, int N) {
+inline void left_cacl(Eigen::MatrixXd &left_info, Eigen::MatrixXd &right_info, int N) {
     // 蝶形，从右向左迭代，最右边一列不进入for循环
     for (int col = left_info.cols() - 2; col > -1; col--) {
         // 每列的计算组数
@@ -36,7 +36,7 @@ void left_cacl(Eigen::MatrixXd &left_info, Eigen::MatrixXd &right_info, int N) {
     }
 }
 
-void right_cacl(Eigen::MatrixXd &left_info, Eigen::MatrixXd &right_info,
+inline void right_cacl(Eigen::MatrixXd &left_info, Eigen::MatrixXd &right_info,
                 int N) {
     // 蝶形，从左向右迭代，最左边一列不进入for循环
     for (int col = 1; col < right_info.cols(); col++) {
@@ -71,7 +71,7 @@ void right_cacl(Eigen::MatrixXd &left_info, Eigen::MatrixXd &right_info,
     }
 }
 
-void get_decode_codeword(Eigen::MatrixXd &left_info, Eigen::MatrixXd &right_info,
+inline void get_decode_codeword(Eigen::MatrixXd &left_info, Eigen::MatrixXd &right_info,
             Eigen::VectorXi &decode_codeword) {
     int N = left_info.rows(); // 获取行数，即码字长度
 

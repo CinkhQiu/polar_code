@@ -5,7 +5,7 @@
 #include <string>
 
 // 从文件中读取冻结位信息至frozen_bits中
-void read_frozen_bits(Eigen::VectorXi &frozen_bits, const std::string &file_name) {
+inline void read_frozen_bits(Eigen::VectorXi &frozen_bits, const std::string &file_name) {
     std::ifstream file(file_name);
 
     if (!file.is_open()) {
