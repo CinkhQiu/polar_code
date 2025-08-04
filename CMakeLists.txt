@@ -2,36 +2,50 @@ cmake_minimum_required(VERSION 3.10)
 project(PolarCodeBPDecode)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 包含头文件目录
-include_directories(${PROJECT_SOURCE_DIR}/include)
+# === 头文件路径 ===
+include_directories(
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/Eigen
+    ${PROJECT_SOURCE_DIR}/include/fmt
+)
 
-# 主程序配置：创建库和可执行文件
-file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/src/*.cpp")
-add_library(polar_bp_decode_lib STATIC ${SOURCES})
-add_executable(polar_bp_decode ${SOURCES})  # 主程序可执行文件
+# === 指定源文件（不包含 main.cpp） ===
+set(SRC_FILES
+    src/bit_flip_simulator.cpp
+    src/config.cpp
+    src/dataset_generator.cpp
+    src/simulate.cpp
+    # 如有其他源文件，继续添加
+)
+
+# === 创建静态库 ===
+add_library(polar_bp_decode_lib STATIC ${SRC_FILES})
+
+# === 主程序入口 ===
+add_executable(polar_bp_decode src/main.cpp)
 target_link_libraries(polar_bp_decode PRIVATE polar_bp_decode_lib)
 
-# 将主程序可执行文件输出到 bin 目录
-set_target_properties(polar_bp_decode PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+# === 设置主程序输出目录为 run.sh 所在的根目录 ===
+set_target_properties(polar_bp_decode PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
 
-# 废弃：添加系统中 Google Test
-# find_package(GTest REQUIRED)
-# include_directories(${GTEST_INCLUDE_DIRS})
-
+# === 添加 Google Test ===
 add_subdirectory(third_party/googletest)
 
-# 启用测试
+# === 启用测试支持 ===
 enable_testing()
 
-# 添加测试文件
+# === 自动查找所有测试文件 ===
 file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/tests/unit/*.cpp")
 
 foreach(TEST_SOURCE ${TEST_SOURCES})
     get_filename_component(TEST_NAME ${TEST_SOURCE} NAME_WE)
     add_executable(${TEST_NAME} ${TEST_SOURCE})
     target_link_libraries(${TEST_NAME} PRIVATE gtest gtest_main polar_bp_decode_lib)
-    set_target_properties(${TEST_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/unit/bin)
+    set_target_properties(${TEST_NAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/unit/bin)
     add_test(NAME ${TEST_NAME} COMMAND ${PROJECT_SOURCE_DIR}/tests/unit/bin/${TEST_NAME})
 endforeach()
