@@ -29,7 +29,7 @@ target_link_libraries(polar_bp_decode PRIVATE polar_bp_decode_lib)
 
 # === 设置主程序输出目录为 run.sh 所在的根目录 ===
 set_target_properties(polar_bp_decode PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}
+    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin
 )
 
 # === 添加 Google Test ===

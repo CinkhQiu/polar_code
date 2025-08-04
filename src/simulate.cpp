@@ -1,4 +1,4 @@
-#include "simulate.h"
+#include "simulate.hpp"
 
 // 完成一次信噪比下的仿真
 // 输入参数：冻结位向量，信噪比，output_info

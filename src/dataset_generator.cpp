@@ -18,7 +18,7 @@ void generate_bp_datasets(int max_count, double snr) {
         std::cerr << "无法打开文件进行读取！count赋值为0" << std::endl;
     } else {
         count = get_numbers_of_datasets(read_file) + 1;
-        std::cout << "当前共有 " << count - 1 << "条数据" << std::endl;
+        std::cout << "当前共有 " << count << "条数据" << std::endl;
     }
     read_file.close();
 

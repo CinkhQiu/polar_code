@@ -1,5 +1,5 @@
 #pragma once
-#include "bp_unit_cacl.h"
+#include "bp_unit_cacl.hpp"
 #include <Eigen/Dense>
 
 inline void left_cacl(Eigen::MatrixXd &left_info, Eigen::MatrixXd &right_info, int N) {

@@ -2,11 +2,11 @@
 #include <Eigen/Dense>
 #include <random>
 #include <thread>
-#include "bp_flip_func.h"
-#include "bp_unit_cacl.h"
-#include "file_in_out.h"
-#include "func.h"
-#include "polar_bp_decode.h"
+#include "bp_flip_func.hpp"
+#include "bp_unit_cacl.hpp"
+#include "file_in_out.hpp"
+#include "func.hpp"
+#include "polar_bp_decode.hpp"
 #include "config.hpp"
 #include "output_info.hpp"
 #include "dataset_generator.hpp"
